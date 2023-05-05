@@ -21,8 +21,14 @@ export class MessagesGateway {
   constructor(private readonly messagesService: MessagesService) {}
 
   @SubscribeMessage('createMessage')
-  async create(@MessageBody() createMessageDto: CreateMessageDto) {
-    const message = await this.messagesService.create(createMessageDto);
+  async create(
+    @MessageBody() createMessageDto: CreateMessageDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const message = await this.messagesService.create(
+      createMessageDto,
+      client.id,
+    );
 
     this.server.emit('message', message);
 
@@ -39,7 +45,7 @@ export class MessagesGateway {
     @MessageBody('name') name: string,
     @ConnectedSocket() client: Socket,
   ) {
-    this.messagesService.identify(name, client.id);
+    return this.messagesService.identify(name, client.id);
   }
 
   @SubscribeMessage('typing')
@@ -48,7 +54,7 @@ export class MessagesGateway {
     @ConnectedSocket() client: Socket,
   ) {
     const name = await this.messagesService.getClientName(client.id);
+    console.log(name);
     client.broadcast.emit('typing', { name, isTyping });
-    return;
   }
 }
